@@ -1,0 +1,48 @@
+name: Build & Deploy Jekyll Site
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Set up Ruby
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'           # Latest stable Ruby
+          bundler-cache: true            # Auto-cache gems
+
+      # 3️⃣ Build the site
+      - name: Build Jekyll site
+        run: |
+          JEKYLL_ENV=production bundle install
+          JEKYLL_ENV=production bundle exec jekyll build
+
+      # 4️⃣ Optional: Verify HTML safely
+      - name: Verify HTML (optional)
+        run: |
+          bundle exec htmlproofer _site \
+            --disable-external \
+            --allow-hash-href \
+            --ignore-missing-alt \
+            --ignore-urls "/404.html,/categories/,/tags/,/assets/img/favicons/"
+
+      # 5️⃣ Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
